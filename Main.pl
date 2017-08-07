@@ -5,10 +5,13 @@
 #main entry point for the xml_merger
 
 use DocHead;
+use Wrapper;
 
 use strict;
 use warnings;
+
 use Fcntl;
+use File::Copy;
 
 main();
 
@@ -18,37 +21,41 @@ sub main
   my $source = "./SOURCE.XML";#$ARGV[0]; #Get CLA for the source file
   #this file is the base file. the unmerged
 
-  open XMLS, '<' ,"$source" or die "Failed to open file $!\n"; 
+  open my $XMLS, '<' ,"$source" or die "Failed to open file $!\n"; 
   #The new GCOV Report
 
-  open XMLM, '+>>' ,"$targetFile" or die "Failed to open file $!\n"; 
+  open my $XMLM, '+>>' ,"$targetFile" or die "Failed to open file $!\n"; 
   #The One to merge with
   
-  backupMERGE(); #backup merged file
+  backupMERGE($XMLM); #backup merged file
 
   #We now have both files opened. Our next step is to begin reading the tags in.  #We should start by reading in up to <packages> which is 10 lines (0-9).
   
-  seek XMLM, 0, 0;
-  my @FileHeader = map scalar(<XMLS>), 0..9;
-  my $FH_REF = \@FileHeader;
+  seek $XMLM, 0, 0;
+  my @FileHeader = map scalar($XMLS), 0..9;
 
   my $Header = new DocHead(@FileHeader);
   $Header->ExtractThings;
 
+  #With the Header and its values extracted we can begin gathering other
+  # parts of the document. Our next step is the <packages> tag
+
+  my $Package = new Wrapper($XMLM);
+
+  $Package->CreateTags;
 }
 
 
 #backs up the file supplied ot it. And returns the backups file handle.
 sub backupMERGE
 {
-  sysopen(BKP, "./backupmerge.xml", O_CREAT|O_WRONLY);
+  my $fh = shift;
 
-  while(<XMLM>)
-  {
-    print BKP $_;
-  }
+  sysopen(my $BKP, "./backupmerge.xml", O_CREAT|O_WRONLY);
 
-  close BKP;
+  copy($fh, $BKP);
+
+  close $BKP;
 }
 
 
