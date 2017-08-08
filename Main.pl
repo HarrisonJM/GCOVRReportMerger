@@ -40,7 +40,7 @@ sub main
   #With the Header and its values extracted we can begin gathering other
   # parts of the document. Our next step is the <packages> tag
 
-  my $Package = new Wrapper($XMLM);
+  my $Package = new Wrapper($XMLS);
 
   $Package->CreateTags;
 }
